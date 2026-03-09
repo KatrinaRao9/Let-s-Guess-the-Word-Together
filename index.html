@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课堂随机抽查 · 不重复词库</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f0f4fa 0%, #e6ecf5 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .card {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 48px;
+            padding: 32px 28px;
+            box-shadow: 0 25px 45px -12px rgba(0, 20, 40, 0.35), 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.02em;
+            color: #1a2e45;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .subtitle {
+            font-size: 1rem;
+            color: #4a5f73;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 2px dashed #b7c9dd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .stats {
+            background: #d9e4f0;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            color: #1f3a57;
+            font-size: 0.95rem;
+            box-shadow: inset 0 1px 3px #ffffff, inset 0 -1px 2px #a3b8ce;
+        }
+        .word-display {
+            background: #ffffffd6;
+            border-radius: 60px;
+            padding: 40px 30px;
+            margin: 20px 0 28px 0;
+            text-align: center;
+            border: 2px solid #ffffff;
+            box-shadow: 0 12px 28px -8px #1f2e3d33, inset 0 -2px 0 #b3c6db;
+        }
+        .en-word {
+            font-size: 4.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #0a1c2f;
+            text-shadow: 0 2px 5px rgba(255,255,255,0.8);
+            word-break: break-word;
+        }
+        .translation-area {
+            margin-top: 22px;
+            min-height: 60px;
+        }
+        .translation-content {
+            background: #e9f2fa;
+            border-radius: 40px;
+            padding: 16px 30px;
+            font-size: 2rem;
+            font-weight: 500;
+            color: #1f4973;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 20, 30, 0.1);
+            border: 1px solid #cdddec;
+            max-width: 90%;
+            word-break: break-word;
+        }
+        .empty-translation {
+            opacity: 0.4;
+            font-style: italic;
+            font-size: 1.1rem;
+            color: #4e6580;
+            background: #dae2ec;
+            border-radius: 40px;
+            padding: 8px 32px;
+            display: inline-block;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 18px;
+            margin: 32px 0 16px;
+        }
+        button {
+            background: white;
+            border: none;
+            padding: 16px 38px;
+            border-radius: 60px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a324b;
+            box-shadow: 0 6px 0 #a2b7cf, 0 12px 22px -10px #273d54;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 2px solid #ffffffcc;
+            flex: 0 1 auto;
+        }
+        button:active {
+            transform: translateY(5px);
+            box-shadow: 0 2px 0 #8fa3bb, 0 8px 16px -6px #1f3449;
+        }
+        button:disabled {
+            opacity: 0.5;
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #9aadc4;
+            pointer-events: none;
+            filter: grayscale(0.3);
+        }
+        .secondary-btn {
+            background: #e3ecf7;
+            box-shadow: 0 4px 0 #b0c3d9, 0 8px 16px -8px #273d54;
+            padding: 12px 28px;
+            font-size: 1.1rem;
+        }
+        .tiny-btn {
+            background: #dce5f1;
+            box-shadow: 0 3px 0 #aebfcf, 0 5px 10px -5px #1f3449;
+            padding: 8px 20px;
+            font-size: 0.95rem;
+            border-radius: 40px;
+        }
+        .reset-area {
+            display: flex;
+            justify-content: center;
+            margin-top: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 14px;
+            background: #cbd8e9;
+            border-radius: 20px;
+            margin: 28px 0 16px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px #9fb0c6;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3e7eb3, #5f9cd1);
+            border-radius: 20px;
+            transition: width 0.2s ease;
+            box-shadow: 0 0 12px #7eb9ff;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #4c637c;
+            margin-top: 28px;
+            border-top: 1px dashed #bacde2;
+            padding-top: 18px;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background: #e2ebf5b3;
+            border-radius: 60px;
+            padding: 8px 18px 8px 28px;
+            margin: 0 10px;
+        }
+        .toggle-switch {
+            background: #b7cfec;
+            border-radius: 100px;
+            padding: 4px;
+            display: inline-flex;
+            gap: 4px;
+        }
+        .toggle-switch span {
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #162b40;
+        }
+        .toggle-switch .active {
+            background: white;
+            box-shadow: 0 2px 6px #4f6883;
+        }
+        .word-list-panel {
+            background: #eef4fc;
+            border-radius: 36px;
+            padding: 20px;
+            margin-top: 30px;
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid white;
+            box-shadow: inset 0 2px 8px #bacfe4;
+        }
+        .word-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 14px;
+            justify-content: center;
+        }
+        .word-chip {
+            background: white;
+            border-radius: 40px;
+            padding: 5px 18px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1e3d5e;
+            box-shadow: 0 2px 5px #a0b6cd;
+            border: 1px solid #d3e2f5;
+            transition: 0.1s;
+        }
+        .word-chip.used {
+            opacity: 0.45;
+            background: #cdddec;
+            text-decoration: line-through 2px #a03535b0;
+            color: #2c4059;
+            box-shadow: inset 0 2px 5px #a3b3c7;
+            order: 1;
+        }
+        .small-note {
+            font-size: 0.85rem;
+            color: #3d5670;
+            margin: 12px 0 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="card" id="app">
+    <h1>
+        📚 随机抽词 · 课堂版
+        <span style="font-size: 1.2rem; margin-left: auto;">3.18 单词库</span>
+    </h1>
+    <div class="subtitle">
+        <span>🔁 不重复抽取 · 一輪循環</span>
+        <span class="stats" id="statsDisplay">已抽 <span id="usedCount">0</span> / <span id="totalCount">0</span></span>
+    </div>
+
+    <!-- 主显示区 -->
+    <div class="word-display">
+        <div class="en-word" id="currentEnWord">✨ 点击抽取</div>
+        <div class="translation-area" id="translationArea">
+            <!-- 默认隐藏中文, 仅占位 -->
+            <div class="empty-translation" id="translationPlaceholder">🙈 中文隐藏 (点击下方展开)</div>
+        </div>
+    </div>
+
+    <!-- 按钮及控制项 -->
+    <div class="action-buttons">
+        <button id="drawBtn">🎲 抽一个</button>
+        <button id="resetRoundBtn" class="secondary-btn">🔄 重置本轮</button>
+    </div>
+
+    <!-- 翻译开关 + 显示剩余未抽 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div class="control-row">
+            <span style="font-weight:500;">📖 中文:</span>
+            <div class="toggle-switch" id="toggleTranslate">
+                <span id="toggleHide" class="active">隐藏</span>
+                <span id="toggleShow">显示</span>
+            </div>
+        </div>
+        <div class="tiny-btn" id="showRemainingBtn" style="cursor:pointer;">📋 剩余 <span id="remainingNum">0</span> 个单词</div>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%;"></div>
+    </div>
+
+    <!-- 单词列表折叠区 (默认关闭) -->
+    <div id="wordListPanel" class="word-list-panel" style="display: none;">
+        <div style="font-weight:600; margin-bottom:12px;">📌 全部单词 (灰色为已抽)</div>
+        <div class="word-chips" id="wordChipsContainer"></div>
+        <div class="small-note">* 点击重置可重新开始新一轮不重复抽取</div>
+    </div>
+
+    <div class="footer-note">
+        ⚡ 每次抽取不会重复，遍历所有单词后自动重置
+    </div>
+</div>
+
+<script>
+(function() {
+    // ---------- 从excel粘贴的数据 (手动提取自 3.18单词库) ----------
+    // 根据表格内容: 包含英文与对应中文 (此处人工整理常用翻译, 贴合原表含义)
+    // 表格里可能出现重复词(如Christmas出现两次, request两次), 保留作为独立项。
+    const rawWordPairs = [
+        ["meeting", "会议"], ["appreciate", "欣赏/感激"], ["Christmas", "圣诞节"], ["begin", "开始"],
+        ["deadline", "截止期限"], ["whiteboard", "白板"], ["Halloween", "万圣节"], ["hotpot", "火锅"],
+        ["coffee", "咖啡"], ["RoboNeo", "罗伯尼奥(品牌/名称)"], ["Thanksgiving Day", "感恩节"], ["mooncake", "月饼"],
+        ["computer", "电脑"], ["social media", "社交媒体"], ["ticket", "票"], ["bed sheet", "床单"],
+        ["photographer", "摄影师"], ["slogan", "口号"], ["perfume", "香水"], ["pillow", "枕头"],
+        ["driver", "司机"], ["passion", "激情"], ["exhibition", "展览"], ["mouse", "鼠标/老鼠"],
+        ["chair", "椅子"], ["challenge", "挑战"], ["promotion", "晋升/推广"], ["asset", "资产"],
+        ["write", "写"], ["status quo", "现状"], ["stress", "压力"], ["patent", "专利"],
+        ["hungry", "饥饿的"], ["makeup", "化妆/组成"], ["understand", "理解"], ["phone case", "手机壳"],
+        ["bicycle", "自行车"], ["Christmas", "圣诞节"], ["garbage", "垃圾"], ["charger", "充电器"],
+        ["screen", "屏幕"], ["sticky note", "便利贴"], ["wrinkles", "皱纹"], ["balloon", "气球"],
+        ["holiday", "假期"], ["skin", "皮肤"], ["percentage", "百分比"], ["boundary", "边界"],
+        ["dumpling", "饺子"], ["interview", "面试/采访"], ["sparkling water", "气泡水"], ["gap", "差距/缺口"],
+        ["Chinese", "中文/中国人"], ["competitor", "竞争对手"], ["mirror", "镜子"], [null, null],
+        ["brain", "大脑"], ["influencer", "网红"], ["elevator", "电梯"], [null, null],
+        ["request", "请求"], ["agree", "同意"], ["projector", "投影仪"], [null, null],
+        ["Wink", "眨眼"], ["library", "图书馆"], ["invite", "邀请"], [null, null],
+        ["design", "设计"], ["washroom", "洗手间"], ["university", "大学"], [null, null],
+        ["BeautyPlus", "美颜相机"], ["female", "女性"], ["translate", "翻译"], [null, null],
+        ["schedule", "日程表"], ["male", "男性"], ["vote", "投票"], [null, null],
+        ["presentation", "演示/报告"], ["gym", "健身房"], ["clarify", "澄清"], [null, null],
+        ["customer", "顾客"], ["soccer", "足球"], ["straight", "直的/直接"], [null, null],
+        ["client", "客户"], ["Thailand", "泰国"], ["estimate", "估计"], [null, null],
+        ["team", "团队"], ["Vietnam", "越南"], ["skip", "跳过"], [null, null],
+        ["project", "项目"], ["Malaysia", "马来西亚"], ["feedback", "反馈"], [null, null],
+        ["introduce", "介绍"], ["waterbottle", "水瓶"], ["crucial", "关键的"], [null, null],
+        ["revenue", "收入"], ["earphone", "耳机"], ["contract", "合同"], [null, null],
+        ["success", "成功"], ["bug", "漏洞/虫子"], ["policy", "政策"], [null, null],
+        ["password", "密码"], ["coding", "编程"], ["advice", "建议"], [null, null],
+        ["expense", "花费"], ["email", "电子邮件"], ["delay", "延迟"], [null, null],
+        ["request", "请求"], ["department", "部门"], ["luggage", "行李"], [null, null],
+        ["bank", "银行"], ["English", "英语"], ["foreign", "外国的"], [null, null],
+        ["investment", "投资"], ["camera", "相机"], ["hand cream", "护手霜"], [null, null],
+        ["rule", "规则"], ["power bank", "充电宝"], ["whipping cream", "淡奶油"], [null, null],
+        ["risk", "风险"], ["tennis", "网球"], ["interrupt", "打断"], [null, null],
+        ["milestone", "里程碑"], ["badminton", "羽毛球"], ["construction", "建筑"], [null, null],
+        ["timeline", "时间线"], ["sunglass", "太阳镜"], ["break up", "分手/打散"], [null, null],
+        ["departure", "离开"], ["March", "三月"], ["parking lot", "停车场"], [null, null],
+        ["technology", "技术"], ["September", "九月"], ["negative", "消极的"], [null, null],
+        ["feedback", "反馈"], ["latte", "拿铁"], ["outsourcing", "外包"], [null, null],
+        ["government", "政府"], ["oat milk", "燕麦奶"], ["customer service", "客服"], [null, null],
+        ["social", "社交的"], ["convergence", "汇聚"], ["lobby", "大厅/游说"], [null, null],
+        ["environment", "环境"], ["business class", "商务舱/商务课"], ["European", "欧洲的"], [null, null],
+        ["opinion", "观点"], ["optimization", "优化"], ["operation", "操作/手术"], [null, null],
+        ["brainstorm", "头脑风暴"], ["sandwich", "三明治"], ["administration", "行政/管理"], [null, null],
+        ["front desk", "前台"], ["pasta", "意大利面"], ["business trip", "出差"], [null, null],
+        ["globalization", "全球化"], ["weakness", "弱点"], ["interesting", "有趣的"], [null, null],
+        ["stock", "股票/库存"], ["strength", "力量/优势"], ["offer", "提供/录用通知"], [null, null],
+        ["limited", "有限的"], ["advantage", "优势"], ["concern", "担忧/关心"], [null, null],
+        ["collaborate", "合作"], [null, null, null, null]
+    ];
+
+    // 过滤掉无效行 (英文为空)
+    const wordList = [];
+    const translationMap = new Map(); // 英文 -> 中文 (若有重复英文，保留第一个出现的中文，但后面相同英文仍作为独立词条)
+    // 但我们希望每个词条对象独立: {en, zh}
+    rawWordPairs.forEach(pair => {
+        const en = pair[0]?.trim();
+        const zh = pair[1]?.trim() || "🤔 待补充";
+        if (en && en.length > 0) {
+            wordList.push({ en: en, zh: zh });
+        }
+    });
+
+    // 额外补几个从表格右侧看到的可能遗漏(表格D列部分词) 手动补全确保包含大部分:
+    const extraPairs = [
+        ["collaborate", "合作"], ["limited", "有限的"], ["stock", "股票/库存"], ["globalization", "全球化"],
+        ["front desk", "前台"], ["brainstorm", "头脑风暴"], ["opinion", "观点"], ["environment", "环境"],
+        ["social", "社交的"], ["government", "政府"], ["technology", "技术"], ["departure", "离开"],
+        ["timeline", "时间线"], ["milestone", "里程碑"], ["risk", "风险"], ["rule", "规则"],
+        ["investment", "投资"], ["bank", "银行"], ["expense", "花费"], ["password", "密码"],
+        ["success", "成功"], ["revenue", "收入"], ["introduce", "介绍"], ["project", "项目"],
+        ["team", "团队"], ["client", "客户"], ["customer", "顾客"], ["presentation", "演示"],
+        ["schedule", "日程表"], ["BeautyPlus", "美颜相机"], ["design", "设计"], ["Wink", "眨眼"],
+        ["request", "请求"], ["brain", "大脑"], ["Chinese", "中文/中国人"], ["dumpling", "饺子"],
+        ["holiday", "假期"], ["screen", "屏幕"], ["bicycle", "自行车"], ["hungry", "饥饿的"],
+        ["write", "写"], ["chair", "椅子"], ["driver", "司机"], ["photographer", "摄影师"],
+        ["coffee", "咖啡"], ["deadline", "截止日期"], ["meeting", "会议"], ["appreciate", "欣赏"]
+    ];
+    extraPairs.forEach(([en, zh]) => {
+        if (en && !wordList.some(item => item.en === en)) { // 简单防重复 (但保留原有重复词)
+            wordList.push({ en, zh });
+        }
+    });
+
+    // 最终去重？但是为了保留原表两个request之类的，就不去重了。可能显示略微重复。保留。
+    // 但可能有完全一样的英文，中文不同？取第一个出现中文。这里不处理，后面显示英文一样中文可能不同，无伤大雅。
+    
+    // 确保每个条目都有中文字(若缺失给个占位)
+    wordList.forEach(item => { if (!item.zh) item.zh = '🌎 未知'; });
+
+    // ---------- 状态 ----------
+    let remainingIndices = [];            // 剩余未抽取的索引 (存放index)
+    let usedIndices = new Set();          // 已抽取索引 (用来显示样式)
+    let currentWordObj = null;            // 当前显示的单词对象 {en, zh}
+    let showTranslation = false;           // 默认隐藏中文
+    let showRemainingList = false;         // 是否显示单词列表
+
+    const totalWords = wordList.length;
+
+    // DOM 元素
+    const currentEnSpan = document.getElementById('currentEnWord');
+    const translationArea = document.getElementById('translationArea');
+    const usedSpan = document.getElementById('usedCount');
+    const totalSpan = document.getElementById('totalCount');
+    const progressFill = document.getElementById('progressFill');
+    const drawBtn = document.getElementById('drawBtn');
+    const resetBtn = document.getElementById('resetRoundBtn');
+    const toggleHide = document.getElementById('toggleHide');
+    const toggleShow = document.getElementById('toggleShow');
+    const showRemainingBtn = document.getElementById('showRemainingBtn');
+    const wordListPanel = document.getElementById('wordListPanel');
+    const wordChips = document.getElementById('wordChipsContainer');
+    const remainingNumSpan = document.getElementById('remainingNum');
+
+    // 初始化: 填充剩余索引 [0,1,2,...]
+    function initRemaining() {
+        remainingIndices = Array.from({ length: totalWords }, (_, i) => i);
+        usedIndices.clear();
+        updateStatsAndUI();
+        // 清空当前单词显示
+        currentWordObj = null;
+        currentEnSpan.innerText = '✨ 点击抽取';
+        setTranslationDisplay(null);
+    }
+
+    // 更新统计、进度条、剩余数字等
+    function updateStatsAndUI() {
+        const usedCount = usedIndices.size;
+        usedSpan.innerText = usedCount;
+        totalSpan.innerText = totalWords;
+        const percent = totalWords ? (usedCount / totalWords) * 100 : 0;
+        progressFill.style.width = percent + '%';
+        remainingNumSpan.innerText = remainingIndices.length;
+
+        // 如果剩余0，自动重置剩余索引 (保证循环)
+        if (remainingIndices.length === 0 && totalWords > 0) {
+            // 全部抽过了: 自动重置 (从头再来)
+            resetRemainingFromUsed();
+        }
+
+        // 更新列表显示(如果面板开着)
+        if (showRemainingList) renderWordChips();
+    }
+
+    // 重置：将所有索引放回剩余 (保留所有单词)
+    function resetRemainingFromUsed() {
+        remainingIndices = Array.from({ length: totalWords }, (_, i) => i);
+        usedIndices.clear();
+        // 不清除当前单词? 为了体验可以保留当前显示，但已抽集合为空，高亮重置。
+        // 如果需要同时清空显示，也可以，但保留原显示并让已抽集合空比较符合重置本轮。
+        // 这里清除当前显示使界面干净
+        currentWordObj = null;
+        currentEnSpan.innerText = '✨ 点击抽取';
+        setTranslationDisplay(null);
+    }
+
+    // 完全重置 (reset按钮调用)
+    function fullReset() {
+        resetRemainingFromUsed();
+        updateStatsAndUI();
+    }
+
+    // 抽取一个单词
+    function drawOneWord() {
+        if (totalWords === 0) {
+            alert('单词库为空');
+            return;
+        }
+        // 如果没有剩余索引，自动重置 (保障点击永远有词)
+        if (remainingIndices.length === 0) {
+            resetRemainingFromUsed();
+        }
+
+        // 随机选一个剩余索引
+        const randomIndex = Math.floor(Math.random() * remainingIndices.length);
+        const selectedIdx = remainingIndices[randomIndex];
+        // 从剩余中删除
+        remainingIndices.splice(randomIndex, 1);
+        usedIndices.add(selectedIdx);
+
+        // 更新当前词
+        currentWordObj = wordList[selectedIdx];
+        currentEnSpan.innerText = currentWordObj.en;
+        // 根据开关显示或隐藏中文
+        setTranslationDisplay(currentWordObj);
+
+        // 更新统计
+        updateStatsAndUI();
+    }
+
+    // 控制翻译区域显示
+    function setTranslationDisplay(wordObj) {
+        if (!wordObj) {
+            translationArea.innerHTML = `<div class="empty-translation">🙈 中文隐藏 (点击下方展开)</div>`;
+            return;
+        }
+        if (showTranslation) {
+            translationArea.innerHTML = `<div class="translation-content">${wordObj.zh}</div>`;
+        } else {
+            translationArea.innerHTML = `<div class="empty-translation">🙈 中文隐藏 (点击下方展开)</div>`;
+        }
+    }
+
+    // 切换翻译显示/隐藏
+    function setShowTranslation(value) {
+        showTranslation = value;
+        if (value) {
+            toggleHide.classList.remove('active');
+            toggleShow.classList.add('active');
+        } else {
+            toggleHide.classList.add('active');
+            toggleShow.classList.remove('active');
+        }
+        // 更新当前显示
+        if (currentWordObj) {
+            setTranslationDisplay(currentWordObj);
+        } else {
+            setTranslationDisplay(null);
+        }
+    }
+
+    // 渲染所有单词chip
+    function renderWordChips() {
+        if (!showRemainingList) return;
+        let html = '';
+        wordList.forEach((item, idx) => {
+            const usedClass = usedIndices.has(idx) ? 'used' : '';
+            html += `<span class="word-chip ${usedClass}" title="${item.zh}">${item.en}</span>`;
+        });
+        wordChips.innerHTML = html;
+    }
+
+    // 切换剩余列表显示
+    function toggleWordList() {
+        showRemainingList = !showRemainingList;
+        wordListPanel.style.display = showRemainingList ? 'block' : 'none';
+        if (showRemainingList) {
+            renderWordChips();
+            showRemainingBtn.innerText = `📋 隐藏列表`;
+        } else {
+            showRemainingBtn.innerText = `📋 剩余 ${remainingIndices.length} 个单词`;
+        }
+    }
+
+    // 事件绑定
+    drawBtn.addEventListener('click', drawOneWord);
+
+    resetBtn.addEventListener('click', function() {
+        fullReset();
+    });
+
+    toggleHide.addEventListener('click', function() {
+        setShowTranslation(false);
+    });
+    toggleShow.addEventListener('click', function() {
+        setShowTranslation(true);
+    });
+
+    showRemainingBtn.addEventListener('click', toggleWordList);
+
+    // 初始化
+    initRemaining();
+    setShowTranslation(false);  // 默认隐藏中文
+    totalSpan.innerText = totalWords;
+    updateStatsAndUI();
+
+    // 当usedIndices改变后更新chip样式 (但手动调render)
+    // 每次抽取或者重置后如果列表打开则刷新
+    const originalUpdate = updateStatsAndUI;
+    updateStatsAndUI = function() {
+        originalUpdate();
+        if (showRemainingList) renderWordChips();
+        // 更新按钮剩余文本（当列表关闭时）
+        if (!showRemainingList) {
+            showRemainingBtn.innerText = `📋 剩余 ${remainingIndices.length} 个单词`;
+        }
+    };
+    updateStatsAndUI();
+
+    // 重写以保证方法绑定
+    window.updateStatsAndUI = updateStatsAndUI;
+})();
+</script>
+</body>
+</html>
